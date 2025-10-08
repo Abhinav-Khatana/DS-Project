@@ -167,3 +167,32 @@ void urldecode(char *dst, const char *src) {
     }
     *dst=0;
 }
+
+/* Static file server */
+void serve_file(SOCKET c, const char *path) {
+    const char *files[][2] = {
+        {"index.html", "text/html"},
+        {"app.js", "application/javascript"},
+        {"styles.css", "text/css"}
+    };
+    
+    if(!strcmp(path,"/")) path="/index.html";
+    
+    for(int i=0; i<3; i++) {
+        if(!strcmp(path+1, files[i][0])) {
+            FILE *f=fopen(files[i][0],"rb");
+            if(f) {
+                fseek(f,0,SEEK_END); long sz=ftell(f); rewind(f);
+                char hdr[256];
+                sprintf(hdr,"HTTP/1.1 200 OK\r\nContent-Type:%s\r\nContent-Length:%ld\r\n\r\n",
+                    files[i][1],sz);
+                send(c,hdr,strlen(hdr),0);
+                char buf[4096]; size_t r;
+                while((r=fread(buf,1,sizeof(buf),f))>0) send(c,buf,r,0);
+                fclose(f);
+                return;
+            }
+        }
+    }
+    send(c,"HTTP/1.1 404\r\nContent-Length:9\r\n\r\nNot Found",45,0);
+}
