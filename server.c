@@ -71,3 +71,50 @@ int get_count(const char *url) {
     }
     return 0;
 }
+void add_history(const char *url) {
+    /* Handle navigation */
+    if(current) {
+        push(&back_stack, current);
+        /* Clear forward history if not at end */
+        if(current->next) {
+            Node *n=current->next;
+            while(n) {Node *t=n->next; free(n); n=t;}
+            current->next=NULL; tail=current;
+        }
+        while(forward_stack) pop(&forward_stack);
+    }
+    
+    /* Create new node */
+    Node *n=calloc(1,sizeof(Node));
+    strcpy(n->url,url);
+    time_t t=time(0);
+    strftime(n->time,32,"%Y-%m-%d %H:%M:%S",localtime(&t));
+    
+    /* Add to list */
+    if(!head) head=tail=n;
+    else {tail->next=n; n->prev=tail; tail=n;}
+    current=n;
+    inc_visit(url);
+}
+
+void go_back() {
+    Node *n=pop(&back_stack);
+    if(n) {push(&forward_stack,current); current=n;}
+}
+
+void go_forward() {
+    Node *n=pop(&forward_stack);
+    if(n) {push(&back_stack,current); current=n;}
+}
+
+void clear_all() {
+    while(head) {Node *t=head->next; free(head); head=t;}
+    while(back_stack) pop(&back_stack);
+    while(forward_stack) pop(&forward_stack);
+    for(int i=0;i<101;i++) {
+        Visit *v=visits[i];
+        while(v) {Visit *t=v->next; free(v); v=t;}
+        visits[i]=NULL;
+    }
+    head=tail=current=NULL;
+}
