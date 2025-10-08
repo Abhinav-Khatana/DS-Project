@@ -196,3 +196,43 @@ void serve_file(SOCKET c, const char *path) {
     }
     send(c,"HTTP/1.1 404\r\nContent-Length:9\r\n\r\nNot Found",45,0);
 }
+
+/* API handler */
+void handle_api(SOCKET c, const char *method, const char *path, const char *body) {
+    char resp[BUFSIZE], hdr[256];
+    
+    if(!strcmp(method,"GET") && !strcmp(path,"/api/history")) {
+        strcpy(resp, build_json(NULL));
+    }
+    else if(!strcmp(method,"GET") && !strncmp(path,"/api/search?q=",14)) {
+        char query[256]={0};
+        urldecode(query, path+14);
+        strcpy(resp, build_json(query));
+    }
+    else if(!strcmp(method,"POST")) {
+        if(!strcmp(path,"/api/visit") && body) {
+            char url[512]={0};
+            if(strstr(body,"url=")) {
+                urldecode(url, strstr(body,"url=")+4);
+                add_history(url);
+                strcpy(resp,"{\"status\":\"ok\"}");
+            } else strcpy(resp,"{\"error\":\"no url\"}");
+        }
+        else if(!strcmp(path,"/api/back")) {
+            go_back(); strcpy(resp,"{\"status\":\"ok\"}");
+        }
+        else if(!strcmp(path,"/api/forward")) {
+            go_forward(); strcpy(resp,"{\"status\":\"ok\"}");
+        }
+        else if(!strcmp(path,"/api/clear")) {
+            clear_all(); strcpy(resp,"{\"status\":\"cleared\"}");
+        }
+        else strcpy(resp,"{\"error\":\"unknown\"}");
+    }
+    else strcpy(resp,"{\"error\":\"method\"}");
+    
+    sprintf(hdr,"HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n",
+        strlen(resp));
+    send(c,hdr,strlen(hdr),0);
+    send(c,resp,strlen(resp),0);
+}
