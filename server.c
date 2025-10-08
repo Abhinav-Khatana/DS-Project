@@ -236,3 +236,57 @@ void handle_api(SOCKET c, const char *method, const char *path, const char *body
     send(c,hdr,strlen(hdr),0);
     send(c,resp,strlen(resp),0);
 }
+/* Main server */
+int main() {
+    WSADATA wsa;
+    WSAStartup(MAKEWORD(2,2), &wsa);
+    
+    SOCKET server = socket(AF_INET, SOCK_STREAM, 0);
+    int opt=1;
+    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, (char*)&opt, sizeof(opt));
+    
+    struct sockaddr_in addr={0};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(PORT);
+    addr.sin_addr.s_addr = INADDR_ANY;
+    
+    if(bind(server,(struct sockaddr*)&addr,sizeof(addr))<0 || listen(server,10)<0) {
+        printf("Failed to start server\n");
+        return 1;
+    }
+    
+    printf("Server running at http://localhost:%d\n", PORT);
+    
+    while(1) {
+        SOCKET client = accept(server, NULL, NULL);
+        if(client == INVALID_SOCKET) continue;
+        
+        char buf[BUFSIZE];
+        int len = recv(client, buf, sizeof(buf)-1, 0);
+        if(len<=0) {closesocket(client); continue;}
+        buf[len]=0;
+        
+        /* Parse request */
+        char method[16], path[256];
+        sscanf(buf, "%15s %255s", method, path);
+        
+        /* Handle OPTIONS (CORS) */
+        if(!strcmp(method,"OPTIONS")) {
+            send(client,"HTTP/1.1 200 OK\r\nContent-Length:0\r\n\r\n",39,0);
+        }
+        /* API calls */
+        else if(!strncmp(path,"/api",4)) {
+            char *body = strstr(buf,"\r\n\r\n");
+            if(body) body+=4;
+            handle_api(client, method, path, body);
+        }
+        /* Static files */
+        else serve_file(client, path);
+        
+        closesocket(client);
+    }
+    
+    closesocket(server);
+    WSACleanup();
+    return 0;
+}
