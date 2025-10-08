@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DS Phase-2 — C backend + JS UI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>DS Phase-2 — History (C backend)</h1>
+
+    <div class="controls">
+      <input id="url" placeholder="Enter URL (e.g. https://example.com)" />
+      <button id="visit">Visit</button>
+      <button id="back">Back</button>
+      <button id="forward">Forward</button>
+      <button id="clear" class="danger">Clear</button>
+    </div>
+
+    <div class="search">
+      <input id="q" placeholder="Search substring" />
+      <button id="searchBtn">Search</button>
+      <button id="refresh">Refresh</button>
+    </div>
+
+    <div class="current">Current: <span id="current">—</span></div>
+
+    <h2>History</h2>
+    <div id="history" class="list">Loading…</div>
+
+    <h2>Search results</h2>
+    <div id="results" class="list"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
