@@ -30,8 +30,8 @@ typedef struct Visit {
 /* Globals */
 Node *head=NULL, *tail=NULL, *current=NULL;
 Stack *back_stack=NULL, *forward_stack=NULL;
-
 Visit *visits[101]={0};
+
 /* Helper functions */
 unsigned hash(const char *s) {
     unsigned h=5381;
@@ -71,6 +71,7 @@ int get_count(const char *url) {
     }
     return 0;
 }
+
 void add_history(const char *url) {
     /* Handle navigation */
     if(current) {
@@ -118,6 +119,7 @@ void clear_all() {
     }
     head=tail=current=NULL;
 }
+
 /* JSON builders */
 char* json_escape(char *dst, const char *src) {
     char *p=dst;
@@ -236,6 +238,7 @@ void handle_api(SOCKET c, const char *method, const char *path, const char *body
     send(c,hdr,strlen(hdr),0);
     send(c,resp,strlen(resp),0);
 }
+
 /* Main server */
 int main() {
     WSADATA wsa;
