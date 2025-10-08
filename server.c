@@ -118,3 +118,52 @@ void clear_all() {
     }
     head=tail=current=NULL;
 }
+/* JSON builders */
+char* json_escape(char *dst, const char *src) {
+    char *p=dst;
+    while(*src) {
+        if(*src=='"'||*src=='\\') *p++='\\';
+        *p++=*src++;
+    }
+    *p=0;
+    return dst;
+}
+
+char* build_json(const char *query) {
+    static char buf[BUFSIZE], esc[1024];
+    char *p=buf;
+    
+    if(!query) {  /* History list */
+        p+=sprintf(p,"[");
+        for(Node *n=head; n; n=n->next) {
+            if(n!=head) *p++=',';
+            p+=sprintf(p,"{\"url\":\"%s\",\"time\":\"%s\",\"current\":%s}",
+                json_escape(esc,n->url), n->time, n==current?"true":"false");
+        }
+        p+=sprintf(p,"]");
+    } else {  /* Search results */
+        p+=sprintf(p,"{\"query\":\"%s\",\"results\":[", json_escape(esc,query));
+        int first=1;
+        for(Node *n=head; n; n=n->next) {
+            if(strstr(n->url,query)) {
+                if(!first) *p++=','; first=0;
+                p+=sprintf(p,"{\"url\":\"%s\",\"time\":\"%s\",\"count\":%d}",
+                    json_escape(esc,n->url), n->time, get_count(n->url));
+            }
+        }
+        p+=sprintf(p,"]}");
+    }
+    return buf;
+}
+
+/* URL decode */
+void urldecode(char *dst, const char *src) {
+    while(*src) {
+        if(*src=='%' && src[1] && src[2]) {
+            char h[3]={src[1],src[2],0};
+            *dst++=strtol(h,NULL,16); src+=3;
+        } else if(*src=='+') {*dst++=' '; src++;}
+        else *dst++=*src++;
+    }
+    *dst=0;
+}
